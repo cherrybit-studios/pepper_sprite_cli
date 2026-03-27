@@ -13,7 +13,8 @@ dependencies:
   mason_logger: ^0.3.3
   path: ^1.9.0
   pepper_sprite_core:
-    path: ../pepper_sprite_core
+    git:
+      url: https://github.com/cherrybit-studios/pepper_sprite_core.git
   pub_updater: ^0.5.0
   yaml: ^3.1.2
 
