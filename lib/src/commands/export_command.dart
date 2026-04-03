@@ -66,9 +66,16 @@ class ExportCommand extends Command<int> {
     int? scaleHeight;
     if (scaleSizeStr != null) {
       final parts = scaleSizeStr.split(',');
-      final w = int.tryParse(parts.elementAtOrNull(0) ?? '');
-      final h = int.tryParse(parts.elementAtOrNull(1) ?? '');
-      if (w == null || h == null || w <= 0 || h <= 0 || parts.length != 2) {
+      if (parts.length != 2) {
+        _logger.err(
+          '--scale-size must be in the format WIDTH,HEIGHT with positive '
+          'integers, e.g. 512,512',
+        );
+        return ExitCode.usage.code;
+      }
+      final w = int.tryParse(parts[0]);
+      final h = int.tryParse(parts[1]);
+      if (w == null || h == null || w <= 0 || h <= 0) {
         _logger.err(
           '--scale-size must be in the format WIDTH,HEIGHT with positive '
           'integers, e.g. 512,512',
