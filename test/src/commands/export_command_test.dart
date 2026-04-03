@@ -35,5 +35,87 @@ void main() {
       // and the export command is registered
       expect(commandRunner, isNotNull);
     });
+
+    group('--scale-size', () {
+      test('invalid format — non-numeric', () async {
+        final exitCode = await commandRunner.run([
+          'export',
+          '-s',
+          '/nonexistent/file.psp',
+          '-o',
+          '/tmp/output.png',
+          '--scale-size',
+          'abc,def',
+        ]);
+
+        expect(exitCode, ExitCode.usage.code);
+        verify(
+          () => logger.err(
+            '--scale-size must be in the format WIDTH,HEIGHT with positive '
+            'integers, e.g. 512,512',
+          ),
+        ).called(1);
+      });
+
+      test('invalid format — single value', () async {
+        final exitCode = await commandRunner.run([
+          'export',
+          '-s',
+          '/nonexistent/file.psp',
+          '-o',
+          '/tmp/output.png',
+          '--scale-size',
+          '512',
+        ]);
+
+        expect(exitCode, ExitCode.usage.code);
+        verify(
+          () => logger.err(
+            '--scale-size must be in the format WIDTH,HEIGHT with positive '
+            'integers, e.g. 512,512',
+          ),
+        ).called(1);
+      });
+
+      test('invalid format — zero width', () async {
+        final exitCode = await commandRunner.run([
+          'export',
+          '-s',
+          '/nonexistent/file.psp',
+          '-o',
+          '/tmp/output.png',
+          '--scale-size',
+          '0,512',
+        ]);
+
+        expect(exitCode, ExitCode.usage.code);
+        verify(
+          () => logger.err(
+            '--scale-size must be in the format WIDTH,HEIGHT with positive '
+            'integers, e.g. 512,512',
+          ),
+        ).called(1);
+      });
+
+      test('invalid format — negative height', () async {
+        final exitCode = await commandRunner.run([
+          'export',
+          '-s',
+          '/nonexistent/file.psp',
+          '-o',
+          '/tmp/output.png',
+          '--scale-size',
+          '512,-1',
+        ]);
+
+        expect(exitCode, ExitCode.usage.code);
+        verify(
+          () => logger.err(
+            '--scale-size must be in the format WIDTH,HEIGHT with positive '
+            'integers, e.g. 512,512',
+          ),
+        ).called(1);
+      });
+    });
   });
 }
