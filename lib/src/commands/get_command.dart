@@ -10,13 +10,16 @@ import 'package:yaml/yaml.dart';
 /// Configuration for a single file to download and export
 class FileConfig {
   /// Creates a file config
-  FileConfig({required this.fileId, required this.output});
+  FileConfig({required this.fileId, required this.output, this.scale});
 
   /// The file ID to download
   final String fileId;
 
   /// The output path for the exported image
   final String output;
+
+  /// Optional scale dimensions in WIDTH,HEIGHT format (e.g. "512,512")
+  final String? scale;
 }
 
 /// {@template get_command}
@@ -116,9 +119,10 @@ class GetCommand extends Command<int> {
 
       final fileId = fileMap['fileId'] as String?;
       final output = fileMap['output'] as String?;
+      final scale = fileMap['scale'] as String?;
 
       if (fileId != null && output != null) {
-        configs.add(FileConfig(fileId: fileId, output: output));
+        configs.add(FileConfig(fileId: fileId, output: output, scale: scale));
       }
     }
 
@@ -129,6 +133,31 @@ class GetCommand extends Command<int> {
   /// Returns true on success, false on failure
   Future<bool> _processFile(FileConfig config, String apiKey) async {
     _logger.info('Processing ${config.fileId}...');
+
+    // Validate and parse scale if provided
+    int? scaleWidth;
+    int? scaleHeight;
+    if (config.scale != null) {
+      final parts = config.scale!.split(',');
+      if (parts.length != 2) {
+        _logger.err(
+          '  scale must be in the format WIDTH,HEIGHT with positive '
+          'integers, e.g. 512,512',
+        );
+        return false;
+      }
+      final w = int.tryParse(parts[0]);
+      final h = int.tryParse(parts[1]);
+      if (w == null || h == null || w <= 0 || h <= 0) {
+        _logger.err(
+          '  scale must be in the format WIDTH,HEIGHT with positive '
+          'integers, e.g. 512,512',
+        );
+        return false;
+      }
+      scaleWidth = w;
+      scaleHeight = h;
+    }
 
     // Create temp file
     final tempDir = Directory.systemTemp.createTempSync('pepper_sprite_');
@@ -146,7 +175,12 @@ class GetCommand extends Command<int> {
       }
 
       // Export file
-      await _exportFile(tempFile, config.output);
+      await _exportFile(
+        tempFile,
+        config.output,
+        scaleWidth: scaleWidth,
+        scaleHeight: scaleHeight,
+      );
 
       _logger.success('  Exported to ${config.output}');
       return true;
@@ -187,7 +221,12 @@ class GetCommand extends Command<int> {
   }
 
   /// Exports a PSP file to PNG
-  Future<void> _exportFile(File sourceFile, String outputPath) async {
+  Future<void> _exportFile(
+    File sourceFile,
+    String outputPath, {
+    int? scaleWidth,
+    int? scaleHeight,
+  }) async {
     final bytes = await sourceFile.readAsBytes();
 
     // Deserialize
@@ -205,6 +244,11 @@ class GetCommand extends Command<int> {
     }
 
     // Export
-    ImageExporter.exportToPngFile(file, outputPath);
+    ImageExporter.exportToPngFile(
+      file,
+      outputPath,
+      scaleWidth: scaleWidth,
+      scaleHeight: scaleHeight,
+    );
   }
 }
