@@ -38,6 +38,10 @@ class ExportCommand extends Command<int> {
         'frame',
         abbr: 'f',
         help: 'Export a specific frame of an animation (requires --animation)',
+      )
+      ..addOption(
+        'scale-size',
+        help: 'Scale the exported image to the given dimensions (e.g. 512,512)',
       );
   }
 
@@ -55,6 +59,32 @@ class ExportCommand extends Command<int> {
     final outputPath = argResults!['output'] as String;
     final animationName = argResults!['animation'] as String?;
     final frameIndexStr = argResults!['frame'] as String?;
+    final scaleSizeStr = argResults!['scale-size'] as String?;
+
+    // Validate and parse --scale-size if provided
+    int? scaleWidth;
+    int? scaleHeight;
+    if (scaleSizeStr != null) {
+      final parts = scaleSizeStr.split(',');
+      if (parts.length != 2) {
+        _logger.err(
+          '--scale-size must be in the format WIDTH,HEIGHT with positive '
+          'integers, e.g. 512,512',
+        );
+        return ExitCode.usage.code;
+      }
+      final w = int.tryParse(parts[0]);
+      final h = int.tryParse(parts[1]);
+      if (w == null || h == null || w <= 0 || h <= 0) {
+        _logger.err(
+          '--scale-size must be in the format WIDTH,HEIGHT with positive '
+          'integers, e.g. 512,512',
+        );
+        return ExitCode.usage.code;
+      }
+      scaleWidth = w;
+      scaleHeight = h;
+    }
 
     // Validate source file exists
     final sourceFile = File(sourcePath);
@@ -101,6 +131,8 @@ class ExportCommand extends Command<int> {
           file,
           animationName,
           frameIndex,
+          scaleWidth: scaleWidth,
+          scaleHeight: scaleHeight,
         );
         await File(outputPath).writeAsBytes(pngBytes);
         _logger.success(
@@ -113,6 +145,8 @@ class ExportCommand extends Command<int> {
           file,
           animationName,
           path.dirname(outputPath),
+          scaleWidth: scaleWidth,
+          scaleHeight: scaleHeight,
         );
         _logger.success(
           'All frames of animation "$animationName" '
@@ -120,7 +154,12 @@ class ExportCommand extends Command<int> {
         );
       } else {
         // Export full sprite
-        ImageExporter.exportToPngFile(file, outputPath);
+        ImageExporter.exportToPngFile(
+          file,
+          outputPath,
+          scaleWidth: scaleWidth,
+          scaleHeight: scaleHeight,
+        );
         _logger.success('Image exported successfully to $outputPath');
       }
 
