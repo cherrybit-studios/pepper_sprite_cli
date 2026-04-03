@@ -138,7 +138,7 @@ class GetCommand extends Command<int> {
     int? scaleWidth;
     int? scaleHeight;
     if (config.scale != null) {
-      final parts = config.scale!.split(',');
+      final parts = config.scale!.split(',').map((e) => e.trim()).toList();
       if (parts.length != 2) {
         _logger.err(
           '  scale must be in the format WIDTH,HEIGHT with positive '
