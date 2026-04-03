@@ -138,21 +138,18 @@ class GetCommand extends Command<int> {
     int? scaleWidth;
     int? scaleHeight;
     if (config.scale != null) {
+      const scaleFormatError =
+          '  scale must be in the format WIDTH,HEIGHT with positive '
+          'integers, e.g. 512,512';
       final parts = config.scale!.split(',').map((e) => e.trim()).toList();
       if (parts.length != 2) {
-        _logger.err(
-          '  scale must be in the format WIDTH,HEIGHT with positive '
-          'integers, e.g. 512,512',
-        );
+        _logger.err(scaleFormatError);
         return false;
       }
       final w = int.tryParse(parts[0]);
       final h = int.tryParse(parts[1]);
       if (w == null || h == null || w <= 0 || h <= 0) {
-        _logger.err(
-          '  scale must be in the format WIDTH,HEIGHT with positive '
-          'integers, e.g. 512,512',
-        );
+        _logger.err(scaleFormatError);
         return false;
       }
       scaleWidth = w;
