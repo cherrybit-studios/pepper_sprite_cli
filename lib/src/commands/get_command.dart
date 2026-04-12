@@ -10,7 +10,15 @@ import 'package:yaml/yaml.dart';
 /// Configuration for a single file to download and export
 class FileConfig {
   /// Creates a file config
-  FileConfig({required this.fileId, required this.output, this.scale});
+  FileConfig({
+    required this.fileId,
+    required this.output,
+    this.name,
+    this.scale,
+  });
+
+  /// Optional human-readable name for this entry
+  final String? name;
 
   /// The file ID to download
   final String fileId;
@@ -44,6 +52,10 @@ class GetCommand extends Command<int> {
         abbr: 'c',
         help: 'Path to the config file',
         defaultsTo: './pepper-sprite.yaml',
+      )
+      ..addOption(
+        'only',
+        help: 'Process only the entry with this name',
       );
   }
 
@@ -61,6 +73,7 @@ class GetCommand extends Command<int> {
   Future<int> run() async {
     final apiKey = argResults!['api-key'] as String;
     final configPath = argResults!['config'] as String;
+    final only = argResults!['only'] as String?;
 
     // Check if config file exists
     final configFile = File(configPath);
@@ -70,10 +83,19 @@ class GetCommand extends Command<int> {
     }
 
     // Parse config file
-    final configs = _parseConfig(configFile);
+    var configs = _parseConfig(configFile);
     if (configs.isEmpty) {
       _logger.err('No files configured in $configPath');
       return ExitCode.usage.code;
+    }
+
+    // Filter by name if --only is provided
+    if (only != null) {
+      configs = configs.where((c) => c.name == only).toList();
+      if (configs.isEmpty) {
+        _logger.err('No entry with name "$only" found in $configPath');
+        return ExitCode.usage.code;
+      }
     }
 
     _logger.info('Found ${configs.length} file(s) to process');
@@ -119,10 +141,13 @@ class GetCommand extends Command<int> {
 
       final fileId = fileMap['fileId'] as String?;
       final output = fileMap['output'] as String?;
+      final name = fileMap['name'] as String?;
       final scale = fileMap['scale'] as String?;
 
       if (fileId != null && output != null) {
-        configs.add(FileConfig(fileId: fileId, output: output, scale: scale));
+        configs.add(
+          FileConfig(fileId: fileId, output: output, name: name, scale: scale),
+        );
       }
     }
 
